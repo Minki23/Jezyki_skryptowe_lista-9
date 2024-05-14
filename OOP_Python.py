@@ -26,6 +26,8 @@ class SSHLogEntry(ABC):
         if match:
             ip_address = match.group()
             ip_address = '.'.join([str(int(segment)) for segment in ip_address.split('.')])
+            if (int(ip_address[:3]) >= 255):
+                return None
             return IPv4Address(ip_address)
         return None
     
@@ -92,7 +94,7 @@ class Error(SSHLogEntry):
     
     def validate(self):
         super().validate()
-        if re.match(r'^.*error*$', self.message) is not None:
+        if re.match(r'^.*error.*$', self.message) is not None:
             return True
         return False
 

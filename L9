@@ -179,7 +179,6 @@ class SSHUser:
       print(f"Username {self.username} is invalid.")
 
 def main() -> None:
-  file: str = sys.argv[1]
   user1: SSHUser = SSHUser("letvuser", "2024-12-12")
   user2: SSHUser = SSHUser("ctssh", "2024-12-12")
   user3: SSHUser = SSHUser("root", "2024-12-12")

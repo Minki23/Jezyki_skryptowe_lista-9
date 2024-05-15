@@ -122,16 +122,16 @@ class SSHLogJournal:
     return item in self.logs
 
   def append(self, content: str) -> None:
-    if re.match(r'^.*Failed password.*$', content) is not None:
-      log_entry = PasswordRejected(content)
-    elif re.match(r'^.*Accepted password.*$', content) is not None:
-      log_entry = PasswordAccepted(content)
-    elif re.match(r'^.*error*$', content) is not None:
-      log_entry = Error(content)
-    else:
-      log_entry = OtherInfo(content)
-    self.logs[self.i] = log_entry
     self.i += 1
+    if re.match(r'^.*Failed password.*$', content) is not None:
+      self.logs[self.i] = PasswordRejected(content)
+    elif re.match(r'^.*Accepted password.*$', content) is not None:
+      self.logs[self.i] = PasswordAccepted(content)
+    elif re.match(r'^.*error*$', content) is not None:
+      self.logs[self.i] = Error(content)
+    else:
+      self.logs[self.i] = OtherInfo(content)
+
 
   def get_logs_by_criteria(self, criteria: Callable[[SSHLogEntry], bool]) -> List[SSHLogEntry]:
     filtered_logs: List[SSHLogEntry] = []
@@ -201,8 +201,6 @@ def main() -> None:
   print(journal["212.47.254.145"])
   print(journal['Dec 10 06:55:48'])
   print(journal[0])
-  for log in journal[0:3]:
-    print(log)
   print(journal[1] == journal[1])
   print(journal.logs[0] == journal.logs[1])
   print(journal.logs[0] < journal.logs[1])
@@ -210,7 +208,7 @@ def main() -> None:
   for log in logs:
     print(log)
 
-  x = SSHLogEntry()
+  # x = SSHLogEntry(content='Dec 10 06:55:48 LabSZ sshd[24200]: Failed password for invalid user webmaster from')
 
 if __name__ == "__main__":
   main()

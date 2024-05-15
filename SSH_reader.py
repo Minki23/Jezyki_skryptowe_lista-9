@@ -176,14 +176,6 @@ def calculate_stdev_times_for_users(user_times):
         stdev_times[user] = stdev_time
     return stdev_times
 
-def get_users_mean_and_stdev(logs_dict):
-  users_dict = defaultdict(list)
-  for log in logs_dict:
-    if get_user_from_log(log["message"]) is not None:  
-      users_dict[get_user_from_log(log["message"])[0]].append(log)
- 
-  for user, user_logs in users_dict.items():
-     get_global_mean_and_stan_deviation_time(user,user_logs)
 
 #zadanie 4 c
 def get_most_and_least_frequent_users(logs_dict):

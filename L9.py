@@ -1,8 +1,5 @@
-import pytest
-import mypy
-from SSH_reader import parse_log_entry, split_into_content, get_message_type, ipv4_matcher, log_dict_pattern
+from SSH_reader import parse_log_entry, split_into_content, get_message_type, ipv4_matcher
 from ipaddress import IPv4Address
-import sys
 import re
 from abc import ABC, abstractmethod
 import datetime
@@ -28,7 +25,7 @@ class SSHLogEntry(ABC):
     if match:
       ip_address = match.group()
       ip_address = '.'.join([str(int(segment)) for segment in ip_address.split('.')])
-      if int(ip_address.split('.')[0]) > 256 and int(ip_address.split('.')[1]) > 256 and int(ip_address.split('.')[2]) > 256 and int(ip_address.split('.')[3]) > 256:
+      if (int(ip_address[:3]) >= 255):
         return None
       return IPv4Address(ip_address)
     return None
@@ -96,7 +93,7 @@ class Error(SSHLogEntry):
 
   def validate(self) -> bool:
     super().validate()
-    if re.match(r'^.*error*$', self.message) is not None:
+    if re.match(r'^.*error.*$', self.message) is not None:
       return True
     return False
 
@@ -124,16 +121,15 @@ class SSHLogJournal:
     return item in self.logs
 
   def append(self, content: str) -> None:
-    self.i += 1
-    if re.match(r'^.*Failed password.*$', content) is not None:
-      self.logs[self.i] = PasswordRejected(content)
-    elif re.match(r'^.*Accepted password.*$', content) is not None:
-      self.logs[self.i] = PasswordAccepted(content)
-    elif re.match(r'^.*error*.$', content) is not None:
-      self.logs[self.i] = Error(content)
-    else:
-      self.logs[self.i] = OtherInfo(content)
-
+      self.i+=1
+      if re.match(r'^.*Failed password.*$', content) is not None:
+          self.logs[self.i] = (PasswordRejected(content))
+      if re.match(r'^.*Accepted password.*$', content) is not None:
+          self.logs[self.i] = (PasswordAccepted(content))
+      if re.match(r'^.*error*$', content) is not None:
+          self.logs[self.i] = (Error(content))
+      else:
+          self.logs[self.i] = (OtherInfo(content))
 
   def get_logs_by_criteria(self, criteria: Callable[[SSHLogEntry], bool]) -> List[SSHLogEntry]:
     filtered_logs: List[SSHLogEntry] = []
@@ -142,28 +138,28 @@ class SSHLogJournal:
         filtered_logs.append(log)
     return filtered_logs
 
-  def __getitem__(self, parameter: Union[slice, int, str]) -> Union[List[SSHLogEntry], SSHLogEntry]:
-    if isinstance(parameter, slice):
-      return list(self.logs.values())[parameter.start:parameter.stop:parameter.step]
-    elif isinstance(parameter, int):
-      return self.logs[parameter]
-    elif isinstance(parameter, str):
-      match = re.search(ipv4_matcher, parameter)
-      if match:
-        for log in self.logs.values():
-          if log.get_ipv4_address() == IPv4Address(parameter):
-            return log
-      else:
-        match = re.match(time_pattern, parameter)
-        if match:
-          data = match.groupdict()
-          timestamp_str = f"2024-{data['month']}-{data['day']} {data['time']}"
-          timestamp = datetime.datetime.strptime(timestamp_str, "%Y-%b-%d %H:%M:%S")
-          for log in self.logs.values():
-            if log.time == timestamp:
-              return log
-    else:
-      raise TypeError("Invalid index type. Expected int or slice.")
+  def __getitem__(self, parameter):
+        if isinstance(parameter, slice):
+            return list(self.logs.values())[parameter.start:parameter.stop:parameter.step]
+        elif isinstance(parameter, int):
+            return self.logs[parameter]
+        elif isinstance(parameter, str):
+            match = re.search(ipv4_matcher, parameter)
+            if match:
+                for log in self.logs:
+                    if self.logs[log].get_ipv4_address() == IPv4Address(parameter):
+                        return self.logs[log]
+            else:
+                match = re.match(time_pattern, parameter)
+                if match:
+                    data = match.groupdict()
+                    timestamp_str = f"2024-{data['month']}-{data['day']} {data['time']}"
+                    timestamp = datetime.datetime.strptime(timestamp_str, "%Y-%b-%d %H:%M:%S")
+                    for log in self.logs:
+                        if self.logs[log].time == timestamp:
+                            return self.logs[log]
+        else:
+            raise TypeError("Invalid index type. Expected int or slice.")
 
 class SSHUser:
   def __init__(self, username: str, last_login_date: str) -> None:

@@ -1,7 +1,7 @@
 import pytest
 import datetime
 from ipaddress import IPv4Address
-from OOP_Python import SSHLogJournal, PasswordRejected, PasswordAccepted, Error, OtherInfo
+from cpy import SSHLogJournal, PasswordRejected, PasswordAccepted, Error, OtherInfo
 
 #testowanie czy dobrze pobieramy czas z loga
 class TestSSHLogEntryTime:
